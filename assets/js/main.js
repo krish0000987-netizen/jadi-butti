@@ -1,6 +1,7 @@
 /* ==========================================================================
    UNANI WARSI DAWAKHANA - MAIN INTERACTIVE JAVASCRIPT
    Jadi-Buti & Unani Herbal Work | Phone: 9045678507
+   Touch Optimized, Mobile-First Support
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,25 +14,26 @@ document.addEventListener('DOMContentLoaded', () => {
       const scrolled = (winScroll / height) * 100;
       scrollProgress.style.width = scrolled + '%';
     }
-  });
+  }, { passive: true });
 
   // 2. Sticky Header Shadow on Scroll
   const header = document.querySelector('.main-header');
   window.addEventListener('scroll', () => {
     if (header) {
-      if (window.scrollY > 40) {
+      if (window.scrollY > 30) {
         header.classList.add('scrolled');
       } else {
         header.classList.remove('scrolled');
       }
     }
-  });
+  }, { passive: true });
 
   // 3. Mobile Navigation Drawer
   const mobileToggle = document.getElementById('mobile-menu-toggle');
   const mobileDrawer = document.getElementById('mobile-drawer');
   const mobileOverlay = document.getElementById('mobile-drawer-overlay');
   const mobileCloseBtn = document.getElementById('mobile-close-btn');
+  const mobileLinks = document.querySelectorAll('.mobile-menu-links a');
 
   function openDrawer() {
     if (mobileDrawer && mobileOverlay) {
@@ -53,6 +55,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (mobileCloseBtn) mobileCloseBtn.addEventListener('click', closeDrawer);
   if (mobileOverlay) mobileOverlay.addEventListener('click', closeDrawer);
 
+  mobileLinks.forEach(link => {
+    link.addEventListener('click', closeDrawer);
+  });
+
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeDrawer();
@@ -61,11 +67,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 4. Hero Slideshow (Homepage - 3 Second Auto Interval)
+  // 4. Hero Slideshow (Homepage - 3 Second Auto Interval + Touch Swipe)
   const heroSlides = document.querySelectorAll('.hero-slide');
   const heroDots = document.querySelectorAll('.hero-dot');
   const prevBtn = document.getElementById('hero-prev-btn');
   const nextBtn = document.getElementById('hero-next-btn');
+  const heroContainer = document.querySelector('.hero-slider-section');
 
   if (heroSlides.length > 0) {
     let currentSlide = 0;
@@ -112,10 +119,31 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    const heroContainer = document.querySelector('.hero-slider-section');
     if (heroContainer) {
       heroContainer.addEventListener('mouseenter', () => clearInterval(slideInterval));
       heroContainer.addEventListener('mouseleave', () => startSlideTimer());
+
+      // Touch swipe support for mobile
+      let touchStartX = 0;
+      let touchEndX = 0;
+
+      heroContainer.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+        clearInterval(slideInterval);
+      }, { passive: true });
+
+      heroContainer.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        const diffX = touchStartX - touchEndX;
+        if (Math.abs(diffX) > 45) {
+          if (diffX > 0) {
+            nextSlide();
+          } else {
+            prevSlide();
+          }
+        }
+        startSlideTimer();
+      }, { passive: true });
     }
 
     // Initialize first slide and start auto rotation
@@ -133,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
 
     revealElements.forEach(el => revealObserver.observe(el));
   } else {
@@ -227,6 +255,22 @@ document.addEventListener('DOMContentLoaded', () => {
     lightboxModal.addEventListener('click', (e) => {
       if (e.target === lightboxModal) closeLightbox();
     });
+
+    // Mobile touch swipe in lightbox
+    let lbTouchStartX = 0;
+    let lbTouchEndX = 0;
+    lightboxModal.addEventListener('touchstart', (e) => {
+      lbTouchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    lightboxModal.addEventListener('touchend', (e) => {
+      lbTouchEndX = e.changedTouches[0].screenX;
+      const diffX = lbTouchStartX - lbTouchEndX;
+      if (Math.abs(diffX) > 40) {
+        if (diffX > 0) openLightbox(currentLightboxIdx + 1);
+        else openLightbox(currentLightboxIdx - 1);
+      }
+    }, { passive: true });
   }
 
   document.addEventListener('keydown', (e) => {
@@ -290,7 +334,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const name = document.getElementById('contact-name')?.value.trim();
       const phone = document.getElementById('contact-phone')?.value.trim();
-      const message = document.getElementById('contact-message')?.value.trim();
 
       if (!name || !phone) {
         alert('Please provide your name and contact phone number.');
